@@ -8,7 +8,7 @@
     "dev:bridge": "cd bridge && npm run dev",
     "dev:admin": "cd bridge/admin-ui && npm run dev",
     "install:all": "cd bridge && npm install && cd admin-ui && npm install",
-    "setup:agents": "node setup-agents.js"
+    "setup:agents": "node _shared_agents/common/setup-agents.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
