@@ -97,6 +97,7 @@ export function generateProfileJson(artistId: string, lang: 'es' | 'en'): any {
   if (!profile) return null;
 
   return {
+    _version: "1.0.0",
     version: "1.1",
     meta: {
       site_title: lang === 'es' ? profile.site_title_es : profile.site_title_en,
