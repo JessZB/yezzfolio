@@ -2,13 +2,15 @@
   "name": "yezzfolio",
   "version": "1.0.0",
   "description": "Yezzfolio CMS — Multi-artist portfolio content management system by JessZB",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "concurrently \"cd bridge && npm run dev\" \"cd bridge/admin-ui && npm run dev\"",
     "dev:bridge": "cd bridge && npm run dev",
     "dev:admin": "cd bridge/admin-ui && npm run dev",
     "install:all": "cd bridge && npm install && cd admin-ui && npm install",
-    "setup:agents": "node _shared_agents/common/setup-agents.js"
+    "setup:agents": "git submodule update --init --recursive && node _shared_agents/common/setup-agents.js",
+    "postinstall": "npm run setup:agents"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

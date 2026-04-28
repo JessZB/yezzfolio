@@ -18,3 +18,7 @@ Este rol garantiza la escalabilidad, eficiencia computacional y la integridad de
 ## 4. Validación Técnica
 - **Asegurar Tipado:** Las respuestas de base de datos (`db.prepare().all()`) devuelven tipo `unknown`. Debes castear los resultados explícitamente mediante una interfaz `interface DBProject { ... }`.
 - **Scripts:** Toda la sintaxis debe validar corriendo los chequeos TypeScripts nativos (`tsc --noEmit`).
+
+## 5. Control de Versiones de API
+- **Rutas de Endpoints:** Todas las rutas expuestas y consumidas por clientes externos deben incluir la versión mayor en la URL para aislar actualizaciones (ej. `/api/v1/projects`).
+- **Tolerancia a Breaking Changes:** Si se introducen cambios incompatibles en la base de datos o en el pipeline de generación JSON (`buildJson.ts`), se debe instanciar una nueva versión de la ruta (ej. `v2`) y mantener la versión anterior operando hasta que el frontend cliente sea refactorizado.
