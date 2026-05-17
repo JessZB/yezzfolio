@@ -12,7 +12,7 @@ Ningún código entra a la rama principal si tiene errores.
 cd bridge && npx tsc --noEmit
 
 # Para Frontend Admin UI (React)
-cd bridge/admin-ui && npx tsc --noEmit
+cd admin-ui && npx tsc --noEmit
 ```
 
 ## 2. Revisión del Backend (Backend Expert + Security Expert)

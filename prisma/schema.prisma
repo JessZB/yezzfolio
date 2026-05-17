@@ -1,0 +1,163 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ARTIST
+}
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+  PENDING_INVITE
+}
+
+// Tabla de Usuarios (La Whitelist)
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  google_id             String?   @unique // Internal Google ID
+  google_user_id       String?   @unique // Google Permission ID (for Drive ownership)
+  refresh_token         String?   // Encrypted refresh token for Drive
+  preferred_lang       String    @default("es")
+  drive_root_folder_id String?
+  name                 String?
+  avatar               String?
+  role                 Role      @default(ARTIST)
+  status               Status    @default(PENDING_INVITE)
+  
+  // Relaciones
+  projects             Project[]
+  profile              Profile?
+  socials              Social[]
+  software             Software[]
+  stats                Stat[]
+  
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+// Proyectos del Artista
+model Project {
+  id                String    @id @default(uuid())
+  userId            String    
+  slug              String
+  order             Int       @default(0)
+  is_published       Boolean   @default(false)
+  
+  // Metadata compatible con Bridge
+  category          String?
+  thumbnail_drive_id String?
+  role_es            String?
+  role_en            String?
+  
+  // JSONB para traducciones { "es": "Título", "en": "Title" }
+  title             Json      
+  description       Json?
+  
+  sections          Section[]
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Secciones dentro de un Proyecto
+model Section {
+  id             String    @id @default(uuid())
+  projectId      String
+  layout_type     String    
+  order          Int       @default(0)
+  
+  title_es        String?
+  title_en        String?
+  description_es  String?
+  description_en  String?
+  model_drive_id  String?
+  
+  assets         Asset[]
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// Archivos multimedia (Google Drive)
+model Asset {
+  id             String    @id @default(uuid())
+  sectionId      String
+  drive_id        String    
+  type           String    
+  order          Int       @default(0)
+  
+  title_es        String?
+  title_en        String?
+  description_es  String?
+  description_en  String?
+  
+  // Metadatos para Three.js
+  config_3d       Json?     
+  
+  section        Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+// Perfil del Artista (Identity, SEO, Contact)
+model Profile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  class_es          String?
+  class_en          String?
+  level            Int      @default(1)
+  status_es         String?
+  status_en         String?
+  bio_es            String?
+  bio_en            String?
+  favicon_drive_id String?
+  avatar_drive_id    String?
+  site_title_es     String?
+  site_title_en     String?
+  seo_desc_es       String?
+  seo_desc_en       String?
+  contact_title_es   String?
+  contact_title_en   String?
+  contact_desc_es    String?
+  contact_desc_en    String?
+  contact_email     String?
+  theme_json        Json?    // Colores y config UI
+  
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Social {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  link        String
+  icon_drive_id String?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Software {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  icon_drive_id String?
+  color       String?
+  order       Int      @default(0)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Stat {
+  id       String @id @default(uuid())
+  userId   String
+  name_es   String
+  name_en   String
+  value    Int    @default(0)
+  css_class String?
+  order    Int      @default(0)
+  
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

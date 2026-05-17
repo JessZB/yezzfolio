@@ -5,7 +5,7 @@ description: Validates and enforces consistent UI styles across the admin panel,
 
 # Admin UI Design Guidelines
 
-Enforces a cohesive, minimal "Glassmorphism" aesthetic throughout the Admin CMS (`bridge/admin-ui/`).
+Enforces a cohesive, minimal "Glassmorphism" aesthetic throughout the Admin CMS (`admin-ui/`).
 
 ## Core Rules
 1. **Consistency**: All editor layouts (`ProfileEditor`, `ProjectEditor`) MUST match the aesthetic established in `Dashboard.tsx` and `Dashboard.css`.

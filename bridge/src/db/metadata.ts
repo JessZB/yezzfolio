@@ -48,7 +48,7 @@ export function initDb() {
       section_id TEXT REFERENCES work_sections(id) ON DELETE CASCADE,
       title_es TEXT,
       title_en TEXT,
-      drive_file_id TEXT NOT NULL,
+      drive_file_id TEXT,
       description_es TEXT,
       description_en TEXT,
       sort_order INTEGER DEFAULT 0

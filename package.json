@@ -5,14 +5,46 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"cd bridge && npm run dev\" \"cd bridge/admin-ui && npm run dev\"",
-    "dev:bridge": "cd bridge && npm run dev",
-    "dev:admin": "cd bridge/admin-ui && npm run dev",
-    "install:all": "cd bridge && npm install && cd admin-ui && npm install",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:admin\"",
+    "dev:api": "nodemon",
+    "dev:admin": "cd admin-ui && npm run dev",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "setup:agents": "git submodule update --init --recursive && node _shared_agents/common/setup-agents.js",
     "postinstall": "npm run setup:agents"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "@types/sanitize-html": "^2.16.1",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.8.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@prisma/config": "^7.8.0",
+    "@types/multer": "^2.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "pg": "^8.20.0",
+    "sanitize-html": "^2.17.3",
+    "zod": "^4.4.2"
   }
 }
