@@ -110,7 +110,7 @@ const ProfileEditor: React.FC = () => {
   const handlePublish = async () => {
     setSaving(true);
     try {
-      await api.post('/publish');
+      await api.post('/generator/build');
       enqueueSnackbar(t('notifications.publish_success'), { variant: 'success' });
     } catch (err) {
       enqueueSnackbar(t('notifications.publish_error'), { variant: 'error' });

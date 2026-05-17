@@ -18,12 +18,12 @@ export class GeneratorService {
     // 1. Fetch all data
     const [user, profile, socials, software, stats, projects] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.profile.findUnique({ where: { userId } }),
-      prisma.social.findMany({ where: { userId, active: true }, orderBy: { order: 'asc' } }),
-      prisma.software.findMany({ where: { userId }, orderBy: { order: 'asc' } }),
-      prisma.stat.findMany({ where: { userId }, orderBy: { order: 'asc' } }),
+      prisma.profile.findUnique({ where: { user_id: userId } }),
+      prisma.social.findMany({ where: { user_id: userId, active: true }, orderBy: { order: 'asc' } }),
+      prisma.software.findMany({ where: { user_id: userId }, orderBy: { order: 'asc' } }),
+      prisma.stat.findMany({ where: { user_id: userId }, orderBy: { order: 'asc' } }),
       prisma.project.findMany({
-        where: { userId, isPublished: true },
+        where: { user_id: userId, is_published: true },
         orderBy: { order: 'asc' },
         include: {
           sections: {
@@ -51,86 +51,86 @@ export class GeneratorService {
           slug: proj.slug,
           title: title[lang] || title['es'] || '',
           category: proj.category || '',
-          thumbnail: proj.thumbnailDriveId ? `${bridgeUrl}/${proj.thumbnailDriveId}` : null,
-          role: lang === 'es' ? proj.roleEs : proj.roleEn,
-          description: desc[lang] || desc['es'] || '',
-          workDone: proj.sections.map(sec => {
-            const mappedItems = sec.assets.map(asset => ({
-              title: lang === 'es' ? asset.titleEs : asset.titleEn,
-              img: `${bridgeUrl}/${asset.driveId}`,
-              desc: lang === 'es' ? asset.descriptionEs : asset.descriptionEn,
-              config3d: asset.config3d
-            }));
+           thumbnail: proj.thumbnail_drive_id ? `${bridgeUrl}/${proj.thumbnail_drive_id}` : null,
+           role: lang === 'es' ? proj.role_es : proj.role_en,
+           description: desc[lang] || desc['es'] || '',
+           workDone: proj.sections.map(sec => {
+             const mappedItems = sec.assets.map(asset => ({
+               title: lang === 'es' ? asset.title_es : asset.title_en,
+               img: `${bridgeUrl}/${asset.drive_id}`,
+               desc: lang === 'es' ? asset.description_es : asset.description_en,
+               config3d: asset.config_3d
+             }));
 
-            // Map layoutType to bridge types
-            if (sec.layoutType === 'asset-group') {
-              return {
-                type: 'asset-group',
-                groupTitle: lang === 'es' ? sec.titleEs : sec.titleEn,
-                description: lang === 'es' ? sec.descriptionEs : sec.descriptionEn,
-                items: mappedItems
-              };
-            } else if (sec.layoutType === 'gltf-model') {
-              return {
-                type: 'gltf-model',
-                title: lang === 'es' ? sec.titleEs : sec.titleEn,
-                description: lang === 'es' ? sec.descriptionEs : sec.descriptionEn,
-                modelUrl: sec.modelDriveId ? `${bridgeUrl}/${sec.modelDriveId}` : null
-              };
-            } else {
-              return {
-                type: '3d-model',
-                title: lang === 'es' ? sec.titleEs : sec.titleEn,
-                description: lang === 'es' ? sec.descriptionEs : sec.descriptionEn,
-                modelPlaceholderColor: 12146341,
-                textures: mappedItems.map(i => ({ name: i.title, img: i.img }))
-              };
-            }
-          })
+             // Map layoutType to bridge types
+             if (sec.layout_type === 'asset-group') {
+               return {
+                 type: 'asset-group',
+                 groupTitle: lang === 'es' ? sec.title_es : sec.title_en,
+                 description: lang === 'es' ? sec.description_es : sec.description_en,
+                 items: mappedItems
+               };
+             } else if (sec.layout_type === 'gltf-model') {
+               return {
+                 type: 'gltf-model',
+                 title: lang === 'es' ? sec.title_es : sec.title_en,
+                 description: lang === 'es' ? sec.description_es : sec.description_en,
+                 modelUrl: sec.model_drive_id ? `${bridgeUrl}/${sec.model_drive_id}` : null
+               };
+             } else {
+               return {
+                 type: '3d-model',
+                 title: lang === 'es' ? sec.title_es : sec.title_en,
+                 description: lang === 'es' ? sec.description_es : sec.description_en,
+                 modelPlaceholderColor: 12146341,
+                 textures: mappedItems.map(i => ({ name: i.title, img: i.img }))
+               };
+             }
+           })
         };
       });
 
       // --- Profile Payload ---
-      result[`profile_${lang}`] = {
-        _version: "1.0.0",
-        version: "1.1",
-        meta: {
-          site_title: lang === 'es' ? profile.siteTitleEs : profile.siteTitleEn,
-          description: lang === 'es' ? profile.seoDescEs : profile.seoDescEn,
-          favicon_drive_id: profile.faviconDriveId,
-          avatar_drive_id: profile.avatarDriveId
-        },
-        identity: {
-          name: user.name || "Artista",
-          class: lang === 'es' ? profile.classEs : profile.classEn,
-          level: profile.level,
-          status: lang === 'es' ? profile.statusEs : profile.statusEn,
-          bio: lang === 'es' ? profile.bioEs : profile.bioEn,
-          avatar: profile.avatarDriveId ? `${bridgeUrl}/${profile.avatarDriveId}` : null
-        },
-        theme: profile.themeJson || {},
-        stats: stats.map(s => ({
-          name: lang === 'es' ? s.nameEs : s.nameEn,
-          value: s.value,
-          class: s.cssClass
-        })),
-        software: software.map(sw => ({
-          id: sw.id,
-          name: sw.name,
-          icon: sw.iconDriveId ? `${bridgeUrl}/${sw.iconDriveId}` : null,
-          color: sw.color
-        })),
-        socials: socials.map(soc => ({
-          name: soc.name,
-          link: soc.link,
-          icon: soc.iconDriveId ? `${bridgeUrl}/${soc.iconDriveId}` : null
-        })),
-        contact: {
-          title: lang === 'es' ? profile.contactTitleEs : profile.contactTitleEn,
-          description: lang === 'es' ? profile.contactDescEs : profile.contactDescEn,
-          email: profile.contactEmail
-        }
-      };
+       result[`profile_${lang}`] = {
+         _version: "1.0.0",
+         version: "1.1",
+         meta: {
+           site_title: lang === 'es' ? profile.site_title_es : profile.site_title_en,
+           description: lang === 'es' ? profile.seo_desc_es : profile.seo_desc_en,
+           favicon_drive_id: profile.favicon_drive_id,
+           avatar_drive_id: profile.avatar_drive_id
+         },
+         identity: {
+           name: user.name || "Artista",
+           class: lang === 'es' ? profile.class_es : profile.class_en,
+           level: profile.level,
+           status: lang === 'es' ? profile.status_es : profile.status_en,
+           bio: lang === 'es' ? profile.bio_es : profile.bio_en,
+           avatar: profile.avatar_drive_id ? `${bridgeUrl}/${profile.avatar_drive_id}` : null
+         },
+         theme: profile.theme_json || {},
+         stats: stats.map(s => ({
+           name: lang === 'es' ? s.name_es : s.name_en,
+           value: s.value,
+           class: s.css_class
+         })),
+         software: software.map(sw => ({
+           id: sw.id,
+           name: sw.name,
+           icon: sw.icon_drive_id ? `${bridgeUrl}/${sw.icon_drive_id}` : null,
+           color: sw.color
+         })),
+         socials: socials.map(soc => ({
+           name: soc.name,
+           link: soc.link,
+           icon: soc.icon_drive_id ? `${bridgeUrl}/${soc.icon_drive_id}` : null
+         })),
+         contact: {
+           title: lang === 'es' ? profile.contact_title_es : profile.contact_title_en,
+           description: lang === 'es' ? profile.contact_desc_es : profile.contact_desc_en,
+           email: profile.contact_email
+         }
+       };
     });
 
     return result;

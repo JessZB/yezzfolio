@@ -17,6 +17,18 @@ export class ProjectsController {
     }
   }
 
+  static async getProject(req: Request, res: Response, next: NextFunction) {
+    try {
+      const project = await ProjectsService.getProject(req.user!.id, req.params.id as string);
+      return res.status(200).json(project);
+    } catch (error: any) {
+      if (error.message === 'NOT_FOUND') {
+        return res.status(404).json({ error: 'Proyecto no encontrado' });
+      }
+      next(error);
+    }
+  }
+
   static async createProject(req: Request, res: Response, next: NextFunction) {
     try {
       const project = await ProjectsService.createProject(req.user!.id, req.body);
@@ -67,6 +79,18 @@ export class ProjectsController {
     } catch (error: any) {
       if (error.message === 'NOT_FOUND_OR_UNAUTHORIZED') {
         return res.status(404).json({ error: 'Sección no encontrada' });
+      }
+      next(error);
+    }
+  }
+
+  static async deleteAsset(req: Request, res: Response, next: NextFunction) {
+    try {
+      await ProjectsService.deleteAsset(req.user!.id, req.params.id as string);
+      return res.status(200).json({ message: 'Asset eliminado' });
+    } catch (error: any) {
+      if (error.message === 'NOT_FOUND_OR_UNAUTHORIZED') {
+        return res.status(404).json({ error: 'Asset no encontrado' });
       }
       next(error);
     }

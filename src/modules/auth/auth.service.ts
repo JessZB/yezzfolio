@@ -61,7 +61,7 @@ export class AuthService {
       user = await prisma.user.update({
         where: { email },
         data: {
-          googleId,
+          google_id: googleId,
           name: user.name || name,
           avatar: user.avatar || avatar,
           status: Status.ACTIVE,
@@ -92,7 +92,7 @@ export class AuthService {
     
     return googleClient.generateAuthUrl({
       access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/drive.readonly'],
+      scope: ['https://www.googleapis.com/auth/drive.file'],
       prompt: 'consent',
       state,
     });
@@ -132,8 +132,8 @@ export class AuthService {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        refreshToken: encryptedToken,
-        googleUserId: googleUserId
+        refresh_token: encryptedToken,
+        google_user_id: googleUserId
       },
     });
 

@@ -20,5 +20,6 @@ router.post('/identity', validate(identitySchema), ProfileController.updateIdent
 router.post('/socials', validate(socialsSchema), ProfileController.updateSocials);
 router.post('/software', validate(softwareSchema), ProfileController.updateSoftware);
 router.post('/stats', validate(statsSchema), ProfileController.updateStats);
+router.post('/lang', ProfileController.updateLang);
 
 export default router;

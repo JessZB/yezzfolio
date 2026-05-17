@@ -64,7 +64,7 @@ const SortableProject: React.FC<{
     >
       <div className="card-thumb">
           {p.thumbnail_drive_id && (
-            <img src={`http://localhost:3001/api/file/${p.thumbnail_drive_id}?artistId=${p.artist_id}`} alt={p.title_es} draggable={false} />
+            <img src={`http://localhost:3001/api/drive/proxy/${p.thumbnail_drive_id}`} alt={p.title_es} draggable={false} />
           )}
       </div>
       <div className="card-info">
@@ -158,7 +158,11 @@ const Dashboard: React.FC = () => {
 
   const handleSaveProject = async (data: any) => {
     try {
-      await api.post('/projects', data);
+      if (data.id) {
+        await api.put(`/projects/${data.id}`, data);
+      } else {
+        await api.post('/projects', data);
+      }
       handleCloseModal();
       fetchProjects();
       enqueueSnackbar(t('notifications.save_success'), { variant: 'success' });
@@ -181,7 +185,7 @@ const Dashboard: React.FC = () => {
 
   const handlePublish = async () => {
     try {
-      await api.post('/publish');
+      await api.post('/generator/build');
       enqueueSnackbar(t('notifications.publish_success'), { variant: 'success' });
     } catch (err) {
       enqueueSnackbar(t('notifications.publish_error'), { variant: 'error' });
@@ -203,7 +207,7 @@ const Dashboard: React.FC = () => {
         
         // Persist to DB
         const orders = newArr.map((p, idx) => ({ id: p.id, sort_order: idx }));
-        api.post('/reorder', { type: 'projects', orders }).catch(() => {
+        api.post('/projects/reorder', { type: 'projects', orders }).catch(() => {
            enqueueSnackbar(t('notifications.reorder_error'), { variant: 'error' });
         });
         

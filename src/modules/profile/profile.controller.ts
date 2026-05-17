@@ -51,4 +51,13 @@ export class ProfileController {
       next(error);
     }
   }
+
+  static async updateLang(req: Request, res: Response, next: NextFunction) {
+    try {
+      await ProfileService.updatePreferredLang(req.user!.id, req.body.lang);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

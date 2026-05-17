@@ -106,10 +106,10 @@ const SortableSectionBlock = React.memo(({ sec, project, index, onUpdate, onEdit
 
       {sec.type === 'asset-group' && (
         <div className="gallery-grid">
-          {sec.items?.map((item: any) => (
+          {sec.assets?.map((item: any) => (
             <div key={item.id} className="item-card glass-card" onClick={() => onEditItem?.(item)}>
-              {item.drive_file_id ? (
-                <img src={`http://localhost:3001/api/file/${item.drive_file_id}?artistId=${project.artist_id}`} alt="" />
+              {item.drive_id ? (
+                <img src={`http://localhost:3001/api/drive/proxy/${item.drive_id}`} alt="" />
               ) : (
                 <div className="img-placeholder"><Image size={24} /></div>
               )}
@@ -166,18 +166,16 @@ const ProjectEditor: React.FC = () => {
   }, [fetchProject]);
 
   const handleAddSection = async (type: string) => {
-    const secId = `sec_${Date.now()}`;
     const payload = {
-      id: secId,
       project_id: id,
-      type,
+      layout_type: type,
       title_es: t('editor.new_section_title', { lng: 'es' }),
       title_en: t('editor.new_section_title', { lng: 'en' }),
-      sort_order: project.sections?.length || 0
+      order: project.sections?.length || 0
     };
-
+    
     try {
-      await api.post('/sections', payload);
+      await api.post('/projects/sections', payload);
       fetchProject();
       enqueueSnackbar(t('notifications.section_created'), { variant: 'success' });
     } catch (err) {
@@ -188,11 +186,15 @@ const ProjectEditor: React.FC = () => {
   const handleUpdateSection = React.useCallback(async (section: any, updates: any) => {
     setProject((prev: any) => ({
       ...prev,
-      sections: prev.sections.map((s: any) => s.id === section.id ? { ...s, ...updates } : s)
+      sections: prev.sections.map((s: any) => s.id === (typeof section === 'string' ? section : section.id) ? { ...s, ...updates } : s)
     }));
+    
+    const payload = typeof section === 'string' 
+      ? { id: section, ...updates } 
+      : { ...section, ...updates };
 
     try {
-      await api.post('/sections', { ...section, ...updates });
+      await api.post('/projects/sections', payload);
       enqueueSnackbar(t('notifications.save_success'), { variant: 'success', autoHideDuration: 1500 });
     } catch (err) {
       enqueueSnackbar(t('notifications.save_error'), { variant: 'error' });
@@ -204,8 +206,8 @@ const ProjectEditor: React.FC = () => {
     if (!deleteTarget) return;
     try {
       const url = deleteTarget.type === 'section' 
-        ? `/sections/${deleteTarget.id}` 
-        : `/items/${deleteTarget.id}`;
+        ? `/projects/sections/${deleteTarget.id}` 
+        : `/projects/assets/${deleteTarget.id}`;
         
       await api.delete(url);
       setDeleteTarget(null);
@@ -217,19 +219,27 @@ const ProjectEditor: React.FC = () => {
   };
 
   const handleAddItem = React.useCallback(async (sectionId: string) => {
-    const id = `item_${Date.now()}`;
+    const payload = {
+      section_id: sectionId,
+      drive_id: '',
+      type: 'image',
+      title_es: '',
+      title_en: ''
+    };
     try {
-      await api.post('/items', { id, section_id: sectionId, drive_file_id: '', title: '' });
+      const res = await api.post('/projects/assets', payload);
       fetchProject();
+      // Open the drawer for the newly created asset so user can upload immediately
+      setEditingItem(res.data);
       enqueueSnackbar(t('notifications.item_added'), { variant: 'success' });
     } catch (err) {
       enqueueSnackbar(t('notifications.save_error'), { variant: 'error' });
     }
-  }, [fetchProject, enqueueSnackbar]);
+  }, [fetchProject, enqueueSnackbar, t]);
 
   const handleSaveItem = async (updates: any) => {
     try {
-      await api.post('/items', updates);
+      await api.post('/projects/assets', updates);
       fetchProject();
       enqueueSnackbar(t('notifications.save_success'), { variant: 'success' });
     } catch (err) {
@@ -240,7 +250,7 @@ const ProjectEditor: React.FC = () => {
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      await api.post('/publish');
+      await api.post('/generator/build');
       enqueueSnackbar(t('notifications.publish_success'), { variant: 'success' });
     } catch (err) {
       enqueueSnackbar(t('notifications.publish_error'), { variant: 'error' });
@@ -270,8 +280,8 @@ const ProjectEditor: React.FC = () => {
       
       setProject((prev: any) => ({ ...prev, sections: newSections }));
       
-       const orders = newSections.map((s: any, idx) => ({ id: s.id, sort_order: idx }));
-       api.post('/reorder', { type: 'sections', orders }).catch(() => fetchProject());
+       const orders = newSections.map((s: any, idx) => ({ id: s.id, order: idx }));
+       api.post('/projects/reorder', { type: 'sections', orders }).catch(() => fetchProject());
     }
   };
 

@@ -9,9 +9,7 @@
     "dev:api": "nodemon",
     "dev:admin": "cd admin-ui && npm run dev",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "setup:agents": "git submodule update --init --recursive && node _shared_agents/common/setup-agents.js",
-    "postinstall": "npm run setup:agents"
+    "start": "node dist/server.js"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

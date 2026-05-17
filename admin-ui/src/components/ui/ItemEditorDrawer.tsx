@@ -1,6 +1,6 @@
 import React from 'react';
-import { Drawer, Box, Typography, TextField, Button, IconButton, ToggleButtonGroup, ToggleButton, CircularProgress } from '@mui/material';
-import { X, Save, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Drawer, Box, Typography, TextField, Button, IconButton, ToggleButtonGroup, ToggleButton, CircularProgress, LinearProgress } from '@mui/material';
+import { X, Save, Trash2, CheckCircle2, AlertCircle, Upload, Image } from 'lucide-react';
 import { extract_drive_id } from '../../api/utils';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/client';
@@ -19,10 +19,15 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
   const [formData, setFormData] = React.useState(item || {});
   const [isValidating, setIsValidating] = React.useState(false);
   const [driveError, setDriveError] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setFormData(item || {});
     setDriveError(false);
+    setUploading(false);
+    setUploadProgress(0);
   }, [item]);
 
   const validateDriveAccess = async (fileId: string) => {
@@ -30,7 +35,7 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
     setIsValidating(true);
     setDriveError(false);
     try {
-      await api.get(`/file/${fileId}/check`);
+      await api.get(`/drive/check/${fileId}`);
       setDriveError(false);
     } catch (err) {
       setDriveError(true);
@@ -41,8 +46,42 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
 
   const handleDriveChange = (val: string) => {
     const id = extract_drive_id(val);
-    setFormData({ ...formData, drive_file_id: id });
+    setFormData({ ...formData, drive_id: id });
     if (id) validateDriveAccess(id);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    setDriveError(false);
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    try {
+      const res = await api.post('/drive/upload', formDataUpload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const total = progressEvent.total || 0;
+          const percent = Math.round((progressEvent.loaded * 100) / total);
+          setUploadProgress(percent);
+        },
+      });
+
+      const driveId = res.data.driveId;
+      setFormData({ ...formData, drive_id: driveId });
+      setDriveError(false);
+    } catch (err: any) {
+      setDriveError(true);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      // Reset file input so the same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleLangChange = (_: any, newLang: 'es' | 'en' | null) => {
@@ -99,13 +138,69 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
         </Box>
 
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
-          <Box className="input-group">
+           {/* File Upload Area */}
+           <Box className="input-group">
+              <label>{t('editor.upload_image') || 'Upload Image'}</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                style={{ display: 'none' }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={uploading ? <CircularProgress size={16} /> : <Upload size={16} />}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                fullWidth
+                sx={{
+                  py: 2,
+                  borderStyle: 'dashed',
+                  borderColor: uploading ? 'var(--accent)' : 'var(--border-glass)',
+                  color: 'var(--text-secondary)',
+                  '&:hover': {
+                    borderColor: 'var(--accent)',
+                    bgcolor: 'rgba(91, 212, 232, 0.05)',
+                  }
+                }}
+              >
+                {uploading ? `${uploadProgress}%` : (formData.drive_id ? t('editor.replace_image') || 'Replace Image' : t('editor.choose_file') || 'Choose File')}
+              </Button>
+              {uploading && (
+                <LinearProgress 
+                  variant="determinate" 
+                  value={uploadProgress} 
+                  sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.1)', '& .MuiLinearProgress-bar': { bgcolor: 'var(--accent)' } }}
+                />
+              )}
+              {formData.drive_id && !uploading && !driveError && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  <CheckCircle2 size={14} color="#10b981" />
+                  <Typography variant="caption" color="success.main">{t('editor.uploaded') || 'Uploaded'}</Typography>
+                </Box>
+              )}
+              {/* Preview if drive_id exists */}
+              {formData.drive_id && !uploading && (
+                <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid var(--border-glass)' }}>
+                  <img 
+                    src={`http://localhost:3001/api/drive/proxy/${formData.drive_id}`} 
+                    alt="Preview" 
+                    style={{ width: '100%', display: 'block' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </Box>
+              )}
+           </Box>
+
+           <Box className="input-group">
              <label>{t('editor.drive_link')}</label>
               <TextField
                 fullWidth
                 variant="filled"
                 placeholder={t('editor.drive_placeholder')}
-                value={formData.drive_file_id || ''}
+                value={formData.drive_id || ''}
                 onChange={(e) => handleDriveChange(e.target.value)}
                 sx={{ input: { color: '#fff' } }}
                 slotProps={{
@@ -113,7 +208,7 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
                     endAdornment: (
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {isValidating && <CircularProgress size={16} sx={{ color: 'var(--accent)' }} />}
-                        {!isValidating && formData.drive_file_id && !driveError && <CheckCircle2 size={16} color="#10b981" />}
+                        {!isValidating && formData.drive_id && !driveError && <CheckCircle2 size={16} color="#10b981" />}
                         {!isValidating && driveError && <AlertCircle size={16} color="#ef4444" />}
                       </Box>
                     )
@@ -167,7 +262,7 @@ const ItemEditorDrawer: React.FC<ItemEditorDrawerProps> = ({ item, isOpen, onClo
             className="btn-primary" 
             startIcon={<Save size={16} />}
             onClick={handleApply}
-            disabled={isValidating || driveError}
+            disabled={isValidating}
             sx={{ 
               flex: 2, 
               color: '#000',

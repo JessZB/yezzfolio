@@ -11,22 +11,13 @@ export class ProfileService {
    * Retrieves the full profile including all associated relations.
    */
   static async getFullProfile(userId: string) {
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-    });
-
-    const [socials, software, stats] = await Promise.all([
-      prisma.social.findMany({ where: { userId }, orderBy: { order: 'asc' } }),
-      prisma.software.findMany({ where: { userId }, orderBy: { order: 'asc' } }),
-      prisma.stat.findMany({ where: { userId }, orderBy: { order: 'asc' } }),
+    const [profile, socials, software, stats] = await Promise.all([
+      prisma.profile.findUnique({ where: { user_id: userId } }),
+      prisma.social.findMany({ where: { user_id: userId }, orderBy: { order: 'asc' } }),
+      prisma.software.findMany({ where: { user_id: userId }, orderBy: { order: 'asc' } }),
+      prisma.stat.findMany({ where: { user_id: userId }, orderBy: { order: 'asc' } }),
     ]);
-
-    return {
-      profile: profile || {},
-      socials,
-      software,
-      stats
-    };
+    return { profile, socials, software, stats };
   }
 
   /**
@@ -34,10 +25,22 @@ export class ProfileService {
    */
   static async upsertIdentity(userId: string, data: any) {
     const cleanedData = cleanObject(data);
-    return prisma.profile.upsert({
-      where: { userId },
-      update: cleanedData,
-      create: { ...cleanedData, userId },
+    const profile = await prisma.profile.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (profile) {
+      return await prisma.profile.update({
+        where: { id: profile.id },
+        data: cleanedData,
+      });
+    }
+
+    return await prisma.profile.create({
+      data: {
+        ...cleanedData,
+        user_id: userId,
+      },
     });
   }
 
@@ -45,35 +48,48 @@ export class ProfileService {
    * Replaces all social links for a user (Transactional).
    */
   static async updateSocials(userId: string, socials: any[]) {
-    return prisma.$transaction([
-      prisma.social.deleteMany({ where: { userId } }),
+    await prisma.$transaction([
+      prisma.social.deleteMany({ where: { user_id: userId } }),
       prisma.social.createMany({
-        data: socials.map((s, idx) => ({ ...s, userId, order: idx })),
+        data: socials.map((s, idx) => {
+          const { id, ...rest } = s; // strip old id to avoid PK conflicts
+          return { ...rest, id: undefined, user_id: userId, order: idx };
+        }),
       }),
     ]);
   }
 
-  /**
-   * Replaces all software items (Transactional).
-   */
   static async updateSoftware(userId: string, software: any[]) {
-    return prisma.$transaction([
-      prisma.software.deleteMany({ where: { userId } }),
+    await prisma.$transaction([
+      prisma.software.deleteMany({ where: { user_id: userId } }),
       prisma.software.createMany({
-        data: software.map((s, idx) => ({ ...s, userId, order: idx })),
+        data: software.map((s, idx) => {
+          const { id, ...rest } = s;
+          return { ...rest, id: undefined, user_id: userId, order: idx };
+        }),
+      }),
+    ]);
+  }
+
+  static async updateStats(userId: string, stats: any[]) {
+    await prisma.$transaction([
+      prisma.stat.deleteMany({ where: { user_id: userId } }),
+      prisma.stat.createMany({
+        data: stats.map((s, idx) => {
+          const { id, ...rest } = s;
+          return { ...rest, id: undefined, user_id: userId, order: idx };
+        }),
       }),
     ]);
   }
 
   /**
-   * Replaces all stats (Transactional).
+   * Updates the user's preferred language.
    */
-  static async updateStats(userId: string, stats: any[]) {
-    return prisma.$transaction([
-      prisma.stat.deleteMany({ where: { userId } }),
-      prisma.stat.createMany({
-        data: stats.map((s, idx) => ({ ...s, userId, order: idx })),
-      }),
-    ]);
+  static async updatePreferredLang(userId: string, lang: string) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { preferred_lang: lang },
+    });
   }
 }

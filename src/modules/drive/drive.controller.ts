@@ -32,7 +32,13 @@ export class DriveController {
       });
 
       return stream.pipe(res);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'DRIVE_NOT_CONNECTED') {
+        return res.status(400).json({ error: 'El propietario de este archivo no ha conectado su cuenta de Google Drive.' });
+      }
+      if (error.message === 'DRIVE_ACCESS_REVOKED') {
+        return res.status(403).json({ error: 'El acceso a Google Drive ha sido revocado por el propietario.' });
+      }
       next(error);
     }
   }
@@ -46,6 +52,9 @@ export class DriveController {
       const fileMeta = await DriveService.checkFileOwnership(req.user!.id, driveId);
       return res.status(200).json({ ok: true, file: fileMeta });
     } catch (error: any) {
+      if (error.message === 'DRIVE_NOT_CONNECTED') {
+        return res.status(400).json({ error: 'Debes conectar tu cuenta de Google Drive primero.' });
+      }
       if (error.message === 'NOT_OWNER') {
         return res.status(403).json({ error: 'No tienes permisos de propietario sobre este archivo.' });
       }
@@ -68,7 +77,10 @@ export class DriveController {
         message: 'Archivo subido con éxito',
         driveId: fileId
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'DRIVE_NOT_CONNECTED') {
+        return res.status(400).json({ error: 'Debes conectar tu cuenta de Google Drive primero.' });
+      }
       next(error);
     }
   }

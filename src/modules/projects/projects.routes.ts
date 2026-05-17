@@ -16,6 +16,7 @@ const router = Router()
 router.use(requireAuth)
 
 router.get('/', ProjectsController.listProjects)
+router.get('/:id', ProjectsController.getProject)
 router.post(
   '/',
   validate(createProjectSchema),
@@ -40,6 +41,7 @@ router.post(
   validate(upsertAssetSchema),
   ProjectsController.upsertAsset,
 )
+router.delete('/assets/:id', ProjectsController.deleteAsset)
 router.post('/reorder', validate(reorderSchema), ProjectsController.reorder)
 
 export default router

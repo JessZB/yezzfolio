@@ -33,7 +33,7 @@ export class UsersService {
       prisma.user.count({ where: { status: Status.ACTIVE } }),
       prisma.user.count({ where: { status: Status.PENDING_INVITE } }),
       prisma.project.count(),
-      prisma.project.count({ where: { isPublished: true } }),
+       prisma.project.count({ where: { is_published: true } }),
     ]);
 
     return {

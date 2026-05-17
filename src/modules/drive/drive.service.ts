@@ -52,17 +52,17 @@ export class DriveService {
           ]
         }
       });
-      if (profile) return profile.userId;
+      if (profile) return profile.user_id;
 
       const project = await prisma.project.findFirst({
         where: { thumbnail_drive_id: drive_id }
       });
-      if (project) return project.userId;
+      if (project) return project.user_id;
 
-      throw new Error('ASSET_NOT_FOUND');
+      throw new Error('DRIVE_ID_NOT_FOUND');
     }
 
-    return asset.section.project.userId;
+    return asset.section.project.user_id;
   }
 
   /**

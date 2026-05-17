@@ -42,10 +42,9 @@ model User {
   updatedAt            DateTime  @updatedAt
 }
 
-// Proyectos del Artista
 model Project {
   id                String    @id @default(uuid())
-  userId            String    
+  user_id           String    
   slug              String
   order             Int       @default(0)
   is_published       Boolean   @default(false)
@@ -61,13 +60,13 @@ model Project {
   description       Json?
   
   sections          Section[]
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 // Secciones dentro de un Proyecto
 model Section {
   id             String    @id @default(uuid())
-  projectId      String
+  project_id      String
   layout_type     String    
   order          Int       @default(0)
   
@@ -78,14 +77,14 @@ model Section {
   model_drive_id  String?
   
   assets         Asset[]
-  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project        Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
 }
 
 // Archivos multimedia (Google Drive)
 model Asset {
   id             String    @id @default(uuid())
-  sectionId      String
-  drive_id        String    
+  section_id      String
+  drive_id        String?
   type           String    
   order          Int       @default(0)
   
@@ -97,13 +96,13 @@ model Asset {
   // Metadatos para Three.js
   config_3d       Json?     
   
-  section        Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  section        Section   @relation(fields: [section_id], references: [id], onDelete: Cascade)
 }
 
 // Perfil del Artista (Identity, SEO, Contact)
 model Profile {
   id               String   @id @default(uuid())
-  userId           String   @unique
+  user_id           String   @unique
   class_es          String?
   class_en          String?
   level            Int      @default(1)
@@ -124,40 +123,40 @@ model Profile {
   contact_email     String?
   theme_json        Json?    // Colores y config UI
   
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Social {
   id          String   @id @default(uuid())
-  userId      String
+  user_id      String
   name        String
   link        String
   icon_drive_id String?
   active      Boolean  @default(true)
   order       Int      @default(0)
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Software {
   id          String   @id @default(uuid())
-  userId      String
+  user_id      String
   name        String
   icon_drive_id String?
   color       String?
   order       Int      @default(0)
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Stat {
   id       String @id @default(uuid())
-  userId   String
+  user_id   String
   name_es   String
   name_en   String
   value    Int    @default(0)
   css_class String?
   order    Int      @default(0)
   
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
